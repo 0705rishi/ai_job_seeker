@@ -1,0 +1,304 @@
+
+
+
+Software Requirements Specification
+
+AI Job Seeker
+An AI-Powered Job Recommendation & Application Platform for Freshers
+
+
+
+
+Capstone Project — MERN Stack Development Training Program
+Document Version 1.0
+Prepared in accordance with IEEE Std 830-1998
+
+Table of Contents
+
+
+
+1. Introduction
+1.1 Purpose
+This Software Requirements Specification (SRS) describes the functional and non-functional requirements of AI Job Seeker, a web-based platform that helps fresh graduates discover and apply to relevant jobs using artificial intelligence. The document defines the system's scope, features, interfaces, and constraints, and serves as the agreed reference between the development team, evaluators, and stakeholders throughout design, implementation, and demonstration.
+1.2 Document Conventions
+Requirement priorities are labelled High, Medium, or Low. “High” requirements are essential to the demonstrable product; “Medium” requirements enhance it; “Low” requirements are desirable future additions. The term “seeker” refers to a job-seeking end user, and “recruiter” refers to an employer user who posts openings.
+1.3 Intended Audience
+This document is intended for the project development team, the training program mentors and evaluators, demo-day reviewers, and any future contributors who maintain or extend the system.
+1.4 Project Scope
+AI Job Seeker enables a fresher to build a profile or upload an existing resume, from which the system extracts structured information (skills, education, projects, and experience). An AI matching engine then recommends openings ranked by a relevance score, with a plain-language explanation of why each role fits. Seekers apply to internally posted jobs with a single click using their stored profile, and are deep-linked to external listings where direct application is not permitted. The platform additionally offers AI-assisted resume analysis, skill-gap insights, cover-letter drafting, and a LaTeX resume that can be opened and refined in Overleaf.
+The product is delivered as a responsive single-page web application backed by a REST API, and is positioned primarily as a learning and demonstration project rather than a commercial service.
+1.5 Definitions, Acronyms, and Abbreviations
+Term
+Definition
+MERN
+Technology stack comprising MongoDB, Express.js, React, and Node.js.
+SPA
+Single-Page Application; a web app that loads a single HTML page and updates content dynamically.
+JWT
+JSON Web Token; a signed token used for stateless authentication.
+ATS
+Applicant Tracking System; software employers use to filter resumes, often keyword-based.
+LLM
+Large Language Model; the AI model used for parsing, matching, and text generation.
+Match Score
+A 0–100 value indicating how well a seeker's profile fits a job.
+One-Click Apply
+Submitting an application to an internal job using the seeker's stored profile and resume.
+Embedding
+A numeric vector representation of text used to compute semantic similarity.
+1.6 References
+IEEE Std 830-1998, IEEE Recommended Practice for Software Requirements Specifications.
+MongoDB, Express.js, React, and Node.js official documentation.
+Overleaf “Open in Overleaf” integration documentation.
+Anthropic / OpenAI API reference for large-language-model usage.
+
+2. Overall Description
+2.1 Product Perspective
+AI Job Seeker is a new, self-contained product built on the MERN stack. It follows a three-tier architecture: a React client (presentation tier), a Node.js/Express REST API (application tier), and a MongoDB database (data tier). The application tier integrates with an external LLM provider for AI capabilities, a cloud object store for resume files, an SMS/email gateway for notifications, and Overleaf for resume editing. The system does not depend on any existing in-house product.
+2.2 Product Features (Summary)
+The major capabilities of the system are summarised below and specified in detail in Section 3.
+Role-based account management for seekers and recruiters.
+Profile creation and AI-powered resume parsing into structured data.
+AI job-recommendation engine with ranked match scores and explanations.
+Job browsing, searching, filtering, and saving.
+One-click apply for internal jobs and deep-link redirect for external jobs.
+Application tracking dashboard with status timeline.
+AI resume/ATS analysis, skill-gap insights, and cover-letter generation.
+LaTeX resume generation with an “Open in Overleaf” handoff.
+Recruiter portal for posting jobs and reviewing applicants.
+2.3 User Classes and Characteristics
+User Class
+Characteristics & Needs
+Job Seeker (Fresher)
+Primary user. Recent graduate, comfortable with web apps but new to job hunting. Needs guidance, relevant matches, and a low-effort application process.
+Recruiter / Employer
+Posts openings and reviews applicants. Needs a simple posting form and a clear applicant list with resume access.
+Administrator
+Maintains the platform, moderates job postings and users, and monitors system health.
+Guest / Visitor
+Unauthenticated user who can view the landing page and browse a limited public job feed before registering.
+2.4 Operating Environment
+Client: Any modern desktop or mobile browser (Chrome, Edge, Firefox, Safari, current versions).
+Server: Node.js LTS runtime hosted on a cloud platform (e.g., Render/Railway) behind HTTPS.
+Database: MongoDB Atlas (cloud-hosted).
+External services: LLM API, cloud object storage, SMS/email gateway, Overleaf.
+2.5 Design and Implementation Constraints
+Technology stack: The system must be implemented using the MERN stack (MongoDB, Express.js, React, Node.js).
+Third-party automation: Automated submission of applications to external job boards (e.g., LinkedIn, Naukri, Indeed) is prohibited by their terms of service and is therefore out of scope; external jobs are handled by redirect only.
+Overleaf integration: Overleaf does not expose a general third-party application API; integration is limited to its documented “Open in Overleaf” mechanism, which opens generated LaTeX in the user's Overleaf session.
+AI dependency: AI features depend on an external LLM provider; calls must be rate-limited and cost-bounded, and the UI must handle latency and failures gracefully.
+Security: Passwords must be hashed (bcrypt); authentication must use signed JWTs; secrets must never be exposed to the client.
+Responsiveness: All primary screens must be fully responsive across mobile and desktop breakpoints.
+2.6 Assumptions and Dependencies
+Users have stable internet access and a modern browser.
+A valid API key for the chosen LLM provider is available and funded for the demonstration.
+Resume uploads are in PDF or LaTeX (.tex) format and are reasonably well structured.
+Cloud services (database, storage, hosting) remain available during evaluation and demo.
+
+3. System Features (Functional Requirements)
+Each feature below states its priority, a description, and the specific functional requirements the system must satisfy.
+3.1 Account Management & Authentication
+Priority: High
+The system shall allow users to register and authenticate as either a seeker or a recruiter, and shall manage sessions securely. Registration uses phone-or-email with a verification step; returning users log in with their credentials.
+Functional Requirements
+FR-1.1: The system shall allow a new user to register by providing name, email or phone, password, and role (seeker or recruiter).
+FR-1.2: The system shall verify the contact via a one-time code (OTP) before activating the account.
+FR-1.3: The system shall authenticate returning users and issue a signed JWT on success.
+FR-1.4: The system shall hash all passwords using bcrypt and never store or transmit them in plain text.
+FR-1.5: The system shall restrict recruiter-only and seeker-only routes based on the authenticated user's role.
+FR-1.6: The system shall allow users to log out, invalidating the active session token client-side.
+3.2 Profile Builder & Resume Upload
+Priority: High
+Seekers shall build a structured profile either by filling a guided form or by uploading an existing resume, from which the system extracts information automatically. A profile-completeness indicator encourages thorough profiles.
+Functional Requirements
+FR-2.1: The system shall let a seeker enter education, skills, projects, experience, and career preferences (role, location, work mode).
+FR-2.2: The system shall accept resume uploads in PDF or .tex format up to a defined size limit.
+FR-2.3: The system shall store uploaded resume files in cloud object storage and retain only a reference in the database.
+FR-2.4: The system shall display a profile-completeness percentage and prompt the user to fill missing sections.
+FR-2.5: The system shall allow the seeker to edit any extracted or entered field before saving.
+3.3 AI Resume Parsing
+Priority: High
+Upon resume upload, the system shall extract the resume text and use an LLM to convert it into structured profile data, which pre-fills the seeker's profile for review.
+Functional Requirements
+FR-3.1: The system shall extract raw text from PDF resumes and parse LaTeX source from .tex resumes.
+FR-3.2: The system shall send extracted text to the LLM and receive a structured result (skills, education, experience, projects) as validated JSON.
+FR-3.3: The system shall map the parsed result onto the seeker's profile fields for confirmation.
+FR-3.4: The system shall report a clear error and allow manual entry if parsing fails or returns low-confidence output.
+3.4 AI Job Recommendation Engine
+Priority: High
+The core feature: the system shall match a seeker's profile against available jobs and present a ranked list with a 0–100 match score and a short explanation for each recommendation.
+Functional Requirements
+FR-4.1: The system shall compute a relevance score between the seeker profile and each active job using semantic similarity and rule-based weighting (skills, role, location, experience).
+FR-4.2: The system shall present recommended jobs in descending order of match score.
+FR-4.3: The system shall display, for each recommendation, a concise AI-generated explanation of why the job matches (e.g., overlapping skills).
+FR-4.4: The system shall recompute recommendations when the seeker meaningfully updates the profile.
+FR-4.5: The system shall return recommendations within an acceptable time and show a loading state while computing.
+3.5 Job Browsing, Search & Save
+Priority: High
+Seekers shall browse, search, and filter all available jobs independently of recommendations, and save jobs of interest for later.
+Functional Requirements
+FR-5.1: The system shall list all active jobs with title, company, location, work mode, and key tags.
+FR-5.2: The system shall let seekers search by keyword and filter by location, role, work mode, and experience level.
+FR-5.3: The system shall let seekers save and unsave jobs, accessible from a dedicated saved-jobs view.
+FR-5.4: The system shall display a detailed job view including full description, requirements, and the seeker's match breakdown.
+3.6 One-Click Apply & External Redirect
+Priority: High
+For jobs posted within the platform, seekers shall apply with a single click using their stored profile and resume. For aggregated external jobs, the system shall redirect to the original posting.
+Functional Requirements
+FR-6.1: The system shall submit an application to an internal job using the seeker's stored profile and selected resume in a single action.
+FR-6.2: The system shall prevent duplicate applications to the same job by the same seeker.
+FR-6.3: The system shall confirm a successful application with an on-screen acknowledgement.
+FR-6.4: The system shall, for external jobs, open the original posting URL in a new tab and mark it as “applied externally” if the seeker confirms.
+3.7 Application Tracking Dashboard
+Priority: High
+Seekers shall track every application and its current status from a single dashboard.
+Functional Requirements
+FR-7.1: The system shall record each application with job reference, date, and status.
+FR-7.2: The system shall display applications grouped or filterable by status (Applied, Under Review, Shortlisted, Rejected).
+FR-7.3: The system shall update status when a recruiter changes it and reflect the change on the seeker dashboard.
+FR-7.4: The system shall show summary metrics such as total applications and response rate.
+3.8 AI Resume Analysis & ATS Score
+Priority: Medium
+The system shall analyse a seeker's resume and return an ATS-style score with concrete, prioritised improvement suggestions.
+Functional Requirements
+FR-8.1: The system shall produce a 0–100 resume score based on structure, keyword coverage, clarity, and completeness.
+FR-8.2: The system shall list specific, actionable suggestions to improve the resume.
+FR-8.3: The system shall optionally evaluate the resume against a chosen target job and report keyword gaps.
+3.9 Skill-Gap Analysis & Learning Suggestions
+Priority: Medium
+For a chosen job, the system shall identify the skills the seeker is missing and suggest learning resources or topics to close the gap.
+Functional Requirements
+FR-9.1: The system shall compare the seeker's skills to a target job's requirements and list missing or weak skills.
+FR-9.2: The system shall present a short, prioritised learning suggestion for each gap.
+FR-9.3: The system shall show the projected match-score improvement if the gaps were addressed.
+3.10 AI Cover-Letter & Tailored Resume Generation
+Priority: Medium
+The system shall generate a tailored cover letter and tailored resume bullet points for a specific job using the seeker's profile.
+Functional Requirements
+FR-10.1: The system shall generate a job-specific cover letter draft that the seeker can edit and copy.
+FR-10.2: The system shall rewrite or reorder the seeker's resume highlights to emphasise relevance to a chosen job.
+FR-10.3: The system shall let the seeker regenerate output and never auto-submit generated content without confirmation.
+3.11 Overleaf Resume Handoff
+Priority: Medium
+The system shall generate an ATS-friendly LaTeX resume from the seeker's profile and provide an “Open in Overleaf” action that opens the document in the user's Overleaf account for further editing.
+Functional Requirements
+FR-11.1: The system shall render the seeker's structured profile into a clean LaTeX resume template.
+FR-11.2: The system shall provide an “Open in Overleaf” action that submits the generated LaTeX to Overleaf's documented open mechanism.
+FR-11.3: The system shall allow the seeker to download the generated .tex and PDF locally as an alternative to Overleaf.
+3.12 Recruiter Portal
+Priority: High
+Recruiters shall post job openings and review the seekers who apply.
+Functional Requirements
+FR-12.1: The system shall let a recruiter create, edit, and close job postings with title, description, requirements, location, and work mode.
+FR-12.2: The system shall list applicants per job with access to each applicant's profile and resume.
+FR-12.3: The system shall let a recruiter update an application's status, which propagates to the seeker.
+3.13 Notifications
+Priority: Low
+The system shall notify seekers of relevant events such as new matching jobs and application status changes.
+Functional Requirements
+FR-13.1: The system shall create in-app notifications for new high-match jobs and status changes.
+FR-13.2: The system shall optionally send email notifications based on user preferences.
+FR-13.3: The system shall let users mark notifications as read and manage notification preferences.
+
+4. External Interface Requirements
+4.1 User Interfaces
+The application shall present a responsive single-page interface with a consistent design system. Primary screens include the landing page, authentication, seeker dashboard (recommended jobs), job detail, resume analyzer, application tracker, profile, and the recruiter portal. All screens shall provide clear loading, empty, and error states, and shall meet accessible contrast and keyboard-navigation expectations.
+4.2 Hardware Interfaces
+The system requires no specialised hardware. It runs on standard servers and is accessed via any internet-connected device with a modern browser.
+4.3 Software Interfaces
+Interface
+Purpose
+MongoDB Atlas
+Primary data store for users, profiles, jobs, and applications.
+LLM Provider API
+Resume parsing, match explanations, ATS scoring, and text generation.
+Cloud Object Storage
+Storage of uploaded and generated resume files.
+SMS / Email Gateway
+OTP delivery and notifications.
+Overleaf
+Opening generated LaTeX resumes for further editing.
+4.4 Communication Interfaces
+All client-server communication shall occur over HTTPS using a JSON REST API.
+Authentication shall be carried via a bearer JWT in the Authorization header.
+File uploads shall use multipart requests; large files stream directly to object storage.
+
+5. Non-Functional Requirements
+5.1 Performance
+Standard page interactions (navigation, list loading) shall respond within roughly two seconds under normal conditions.
+AI-driven operations (parsing, recommendations, generation) shall complete within a reasonable interval and always present a visible progress indicator.
+The system shall support concurrent use by an evaluation-scale number of users without degradation.
+5.2 Security
+Passwords shall be hashed with bcrypt; authentication shall use signed, expiring JWTs.
+All secrets and API keys shall reside server-side and never be exposed to the client.
+Role-based access control shall guard all protected routes.
+All inputs shall be validated and sanitised to prevent injection and malformed-data errors.
+Resume files shall be access-controlled so only the owning seeker and authorised recruiters can retrieve them.
+5.3 Usability
+The interface shall be intuitive enough for a first-time fresher to complete a profile and apply without instruction.
+The design shall be fully responsive and maintain a consistent visual language across devices.
+Errors shall be communicated in plain, actionable language.
+5.4 Reliability & Availability
+The system shall handle external-service failures gracefully and never crash the client on an AI or network error.
+Failed AI calls shall degrade to a usable fallback (e.g., manual entry, retry).
+5.5 Scalability & Maintainability
+The codebase shall be modular with clear separation between client, API, and data layers.
+The API shall follow consistent, documented REST conventions to ease extension.
+Configuration shall be environment-driven so the system can move between development and production without code changes.
+
+6. System Architecture & Data Model
+6.1 Architecture Overview
+AI Job Seeker follows a classic three-tier MERN architecture. The React client communicates with a Node.js/Express REST API over HTTPS. The API encapsulates all business logic, persists data in MongoDB, and orchestrates calls to external services (LLM provider, object storage, messaging gateway, and Overleaf). This separation keeps secrets server-side, allows each tier to scale independently, and makes the AI provider replaceable behind a service module.
+Presentation tier — React SPA with a component library, client routing, and centralised data fetching.
+Application tier — Express REST API with controllers, services, authentication middleware, and an AI service module.
+Data tier — MongoDB collections for users, jobs, and applications; cloud object storage for resume files.
+6.2 Core Data Entities
+Entity
+Key Fields
+User
+id, name, email/phone, passwordHash, role, createdAt
+SeekerProfile
+userId, education, skills[], projects[], experience[], preferences, resumeFileRef, completeness
+Job
+id, recruiterId, title, company, description, requirements[], skills[], location, workMode, source (internal/external), externalUrl, status
+Application
+id, seekerId, jobId, resumeRef, status, matchScore, appliedAt
+Recommendation
+seekerId, jobId, matchScore, explanation, generatedAt
+Notification
+userId, type, message, read, createdAt
+
+7. Representative Use Cases
+7.1 Use Case: Get Recommended Jobs
+Field
+Description
+Actor
+Job Seeker
+Precondition
+Seeker is authenticated and has a profile with at least basic skills.
+Main Flow
+1. Seeker opens the dashboard. 2. System computes match scores against active jobs. 3. System displays ranked recommendations with scores and explanations. 4. Seeker opens a job to view details and match breakdown.
+Postcondition
+Seeker views a ranked, explained list of relevant jobs.
+Alternate Flow
+If no jobs match, the system shows an empty state with guidance to broaden preferences or improve the profile.
+
+7.2 Use Case: One-Click Apply
+Field
+Description
+Actor
+Job Seeker
+Precondition
+Seeker is authenticated, has a resume, and is viewing an internal job.
+Main Flow
+1. Seeker clicks Apply. 2. System submits the stored profile and resume. 3. System checks for duplicate application. 4. System records the application and confirms success.
+Postcondition
+An application is recorded and appears in the seeker's tracker.
+Alternate Flow
+If already applied, the system informs the seeker and takes no further action.
+7.3 Future Scope
+AI mock-interview practice with role-specific question generation and feedback.
+Personalised career roadmap that sequences skills and roles over time.
+Recruiter-side AI ranking and shortlisting of applicants.
+Native mobile application and richer analytics for seekers and recruiters.
+Real-time chat between recruiters and shortlisted seekers.

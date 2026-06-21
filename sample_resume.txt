@@ -1,0 +1,18 @@
+Priya Patel
+Email: priya@example.com
+Role: Software Developer
+
+Skills:
+React, Node.js, TypeScript, MongoDB, Python, HTML, CSS, Git
+
+Education:
+B.Tech Computer Science from Indian Institute of Technology (IIT), 2025
+
+Experience:
+Software Development Intern at InnovateTech Solutions (6 months)
+Developed frontend user dashboard components using React and helped refactor legacy CSS to modern Tailwind code.
+
+Projects:
+E-Commerce Web Application
+Full-stack e-commerce marketplace featuring product catalog, shopping cart, and mock payment gateway integration.
+Tech stack: React, Node.js, Express, MongoDB
