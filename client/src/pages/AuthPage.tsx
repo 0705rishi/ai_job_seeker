@@ -5,9 +5,9 @@ import useAuth from "../features/useAuth";
 export const AuthPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, register, verifyOtp, resendOtp, isLoggingIn, isRegistering, isVerifying, isResending } = useAuth();
+  const { login, register, isLoggingIn, isRegistering } = useAuth();
   
-  const [mode, setMode] = useState<"login" | "signup" | "otp">("login");
+  const [mode, setMode] = useState<"login" | "signup">("login");
 
   useEffect(() => {
     if (location.pathname === "/signup") {
@@ -24,9 +24,7 @@ export const AuthPage = () => {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"seeker" | "recruiter">("seeker");
   
-  // OTP state
-  const [otpCode, setOtpCode] = useState("");
-  const [otpEmail, setOtpEmail] = useState("");
+
   
   // Error / Message state
   const [errorMessage, setErrorMessage] = useState("");
@@ -50,39 +48,16 @@ export const AuthPage = () => {
     setInfoMessage("");
     try {
       await register({ name, email, phone: phone || undefined, password, role });
-      setOtpEmail(email);
-      setMode("otp");
-      setInfoMessage("Registration successful! Please enter the 6-digit OTP code sent to your email.");
+      setInfoMessage("Registration successful! Logging you in...");
+      setTimeout(() => {
+        navigate(role === "recruiter" ? "/recruiter/dashboard" : "/dashboard");
+      }, 1000);
     } catch (err: any) {
       setErrorMessage(err.response?.data?.error?.message || "Failed to register. Email may already be in use.");
     }
   };
 
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage("");
-    setInfoMessage("");
-    try {
-      await verifyOtp({ email: otpEmail || email, code: otpCode });
-      setInfoMessage("Verification successful! Logging you in...");
-      setTimeout(() => {
-        navigate(role === "recruiter" ? "/recruiter/dashboard" : "/dashboard");
-      }, 1000);
-    } catch (err: any) {
-      setErrorMessage(err.response?.data?.error?.message || "Invalid or expired OTP. Please try again.");
-    }
-  };
 
-  const handleResendOtp = async () => {
-    setErrorMessage("");
-    setInfoMessage("");
-    try {
-      await resendOtp({ email: otpEmail || email });
-      setInfoMessage("A new verification code has been sent to your email.");
-    } catch (err: any) {
-      setErrorMessage(err.response?.data?.error?.message || "Failed to resend OTP. Please try again.");
-    }
-  };
 
   return (
     <div className="flex min-h-[85vh] w-full max-w-5xl bg-white rounded-card overflow-hidden shadow-card border border-border my-6">
@@ -115,12 +90,10 @@ export const AuthPage = () => {
             <h1 className="text-2xl font-bold font-display text-ink">
               {mode === "login" && "Welcome back"}
               {mode === "signup" && "Create your account"}
-              {mode === "otp" && "Enter verification code"}
             </h1>
             <p className="text-sm text-text-muted mt-1">
               {mode === "login" && "Login to view matches and track applications"}
               {mode === "signup" && "Get started today as a seeker or recruiter"}
-              {mode === "otp" && `We sent a 6-digit code to ${otpEmail || "your email"}`}
             </p>
           </div>
 
@@ -311,54 +284,7 @@ export const AuthPage = () => {
             </form>
           )}
 
-          {mode === "otp" && (
-            <form onSubmit={handleOtpSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-ink text-center mb-4">
-                  Enter Verification Code
-                </label>
-                <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  placeholder="123456"
-                  className="w-full tracking-[1.5rem] text-center font-mono font-semibold text-2xl px-4 py-3 bg-canvas border border-border rounded-button text-ink placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-indigo focus:border-transparent"
-                />
-              </div>
 
-              <button
-                type="submit"
-                disabled={isVerifying}
-                className="w-full py-3 bg-indigo text-white font-medium rounded-button hover:bg-opacity-95 active:scale-98 transition-all min-h-[44px] flex items-center justify-center text-sm disabled:opacity-50"
-              >
-                {isVerifying ? "Verifying..." : "Verify Code"}
-              </button>
-
-              <div className="text-center text-sm">
-                <span className="text-text-muted">Didn't receive a code? </span>
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={isResending}
-                  className="text-indigo font-medium hover:underline disabled:opacity-50"
-                >
-                  {isResending ? "Resending..." : "Resend OTP"}
-                </button>
-              </div>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setMode("signup")}
-                  className="text-text-muted text-xs hover:text-indigo hover:underline"
-                >
-                  Change Email / Back to Sign Up
-                </button>
-              </div>
-            </form>
-          )}
         </div>
       </div>
     </div>

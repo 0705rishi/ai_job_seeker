@@ -26,20 +26,6 @@ authRouter.post(
 );
 
 authRouter.post(
-  "/verify-otp",
-  authRateLimiter,
-  validate(authController.verifyOtpSchema),
-  authController.verify
-);
-
-authRouter.post(
-  "/resend-otp",
-  authRateLimiter,
-  validate(authController.resendOtpSchema),
-  authController.resend
-);
-
-authRouter.post(
   "/login",
   authRateLimiter,
   validate(authController.loginSchema),

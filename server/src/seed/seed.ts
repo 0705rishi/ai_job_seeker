@@ -4,7 +4,7 @@ import env from "../config/env";
 import User from "../models/user.model";
 import Job from "../models/job.model";
 import SeekerProfile from "../models/profile.model";
-import { getEmbedding } from "../services/ai/gemini.service";
+import { getEmbedding } from "../services/ai/groq.service";
 
 const jobsData: any[] = [
   {

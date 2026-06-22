@@ -3,7 +3,7 @@ import { z } from "zod";
 import SeekerProfile from "../models/profile.model";
 import Job from "../models/job.model";
 import { AuthenticatedRequest } from "../middleware/auth.middleware";
-import * as geminiService from "../services/ai/gemini.service";
+import * as groqService from "../services/ai/groq.service";
 
 export const skillGapSchema = z.object({
   jobId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid jobId format"),
@@ -28,7 +28,7 @@ export const getAtsScore = async (
       return;
     }
 
-    const result = await geminiService.getAtsScore(profile, req.user?.email || "");
+    const result = await groqService.getAtsScore(profile, req.user?.email || "");
     res.status(200).json({
       success: true,
       data: result,
@@ -63,7 +63,7 @@ export const getSkillGap = async (
       return;
     }
 
-    const result = await geminiService.getSkillGapAnalysis(profile, job);
+    const result = await groqService.getSkillGapAnalysis(profile, job);
     res.status(200).json({
       success: true,
       data: result,
@@ -98,7 +98,7 @@ export const generateCoverLetter = async (
       return;
     }
 
-    const coverLetter = await geminiService.generateCoverLetter(
+    const coverLetter = await groqService.generateCoverLetter(
       profile,
       job,
       req.user?.name || "Job Seeker"
@@ -128,7 +128,7 @@ export const generateLatexResume = async (
       return;
     }
 
-    const latex = geminiService.generateLatexResume(
+    const latex = groqService.generateLatexResume(
       profile,
       req.user?.email || "",
       req.user?.name || "Job Seeker"

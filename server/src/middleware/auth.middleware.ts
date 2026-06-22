@@ -48,14 +48,6 @@ export const protect = async (
       return;
     }
 
-    if (!user.verified) {
-      res.status(403).json({
-        success: false,
-        error: { message: "Account is not verified. Please verify using OTP." },
-      });
-      return;
-    }
-
     req.user = user;
     next();
   } catch (error) {

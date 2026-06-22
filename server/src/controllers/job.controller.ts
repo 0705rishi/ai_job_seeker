@@ -3,7 +3,7 @@ import { z } from "zod";
 import Job from "../models/job.model";
 import SeekerProfile from "../models/profile.model";
 import { AuthenticatedRequest } from "../middleware/auth.middleware";
-import { getEmbedding } from "../services/ai/gemini.service";
+import { getEmbedding } from "../services/ai/groq.service";
 import { calculateJobMatch } from "../services/matching/matching.service";
 
 // Validation Schema for creating a job

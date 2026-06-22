@@ -4,7 +4,7 @@ import pdfParse from "pdf-parse";
 import SeekerProfile from "../models/profile.model";
 import { AuthenticatedRequest } from "../middleware/auth.middleware";
 import { uploadResumeFile } from "../services/upload.service";
-import { parseResumeText, getEmbedding } from "../services/ai/gemini.service";
+import { parseResumeText, getEmbedding } from "../services/ai/groq.service";
 
 // Validation Schema for profile update
 export const profileUpdateSchema = z.object({

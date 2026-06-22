@@ -13,15 +13,6 @@ export const registerSchema = z.object({
   role: z.enum(["seeker", "recruiter"]),
 });
 
-export const verifyOtpSchema = z.object({
-  email: z.string().email("Invalid email format"),
-  code: z.string().length(6, "OTP must be exactly 6 digits"),
-});
-
-export const resendOtpSchema = z.object({
-  email: z.string().email("Invalid email format"),
-});
-
 export const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
   password: z.string().min(1, "Password is required"),
@@ -49,51 +40,9 @@ export const register = async (
     res.status(201).json({
       success: true,
       data: {
-        message: "Registration successful. OTP sent to your contact.",
-        userId: result.userId,
-        email: result.email,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const verify = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { email, code } = req.body;
-    const result = await authService.verifyOtp(email, code);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        message: "Account verified successfully",
+        message: "Registration successful",
         token: result.token,
         user: result.user,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const resend = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { email } = req.body;
-    await authService.resendOtp(email);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        message: "New OTP sent successfully",
       },
     });
   } catch (error) {

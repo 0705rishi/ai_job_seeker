@@ -1,16 +1,15 @@
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 import env from "../../config/env";
 import { ISeekerProfile } from "../../models/profile.model";
 import { IJob } from "../../models/job.model";
 
-const isGeminiConfigured = !!env.GEMINI_API_KEY;
+const isGroqConfigured = !!env.GROQ_API_KEY;
 
-// Only instantiate GoogleGenAI if the API key is present
-const ai = isGeminiConfigured ? new GoogleGenAI({ apiKey: env.GEMINI_API_KEY }) : null;
+// Only instantiate Groq if the API key is present
+const groq = isGroqConfigured ? new Groq({ apiKey: env.GROQ_API_KEY }) : null;
 
 export const MODELS = {
-  text: "gemini-2.0-flash",
-  embedding: "text-embedding-004",
+  text: "llama-3.3-70b-versatile",
 };
 
 // 200 common skills/tech terms to map to embedding indices for deterministic mock embeddings
@@ -67,33 +66,11 @@ const generateMockEmbedding = (text: string): number[] => {
 
 /**
  * Generate embedding vector using Gemini API, or fallback to mock vector
+ * Since Groq does not have embedding models, we always generate offline mock embeddings.
  */
 export const getEmbedding = async (text: string): Promise<number[]> => {
-  if (!isGeminiConfigured || !ai) {
-    console.log("⚠️ [AI SERVICE] Gemini API key missing. Generating mock embedding vector.");
-    return generateMockEmbedding(text);
-  }
-
-  try {
-    const response = await ai.models.embedContent({
-      model: MODELS.embedding,
-      contents: text,
-    });
-    
-    const res = response as any;
-    if (res.embedding?.values) {
-      return res.embedding.values;
-    }
-    
-    if (res.embeddings && res.embeddings[0]?.values) {
-      return res.embeddings[0].values;
-    }
-    
-    throw new Error("Empty embedding returned from Gemini");
-  } catch (error) {
-    console.error("❌ [AI SERVICE] Gemini embedding error:", error);
-    return generateMockEmbedding(text);
-  }
+  console.log("ℹ️ [AI SERVICE] Groq does not support embeddings. Generating mock embedding vector.");
+  return generateMockEmbedding(text);
 };
 
 export interface ParsedProfile {
@@ -117,86 +94,70 @@ export interface ParsedProfile {
 }
 
 /**
- * Generate parsed profile from resume text using Gemini Structured Outputs, or fallback to mock parser.
+ * Generate parsed profile from resume text using Groq Structured Outputs, or fallback to mock parser.
  */
 export const parseResumeText = async (text: string): Promise<ParsedProfile> => {
-  if (!isGeminiConfigured || !ai) {
-    console.log("⚠️ [AI SERVICE] Gemini API key missing. Running mock resume parser.");
+  if (!isGroqConfigured || !groq) {
+    console.log("⚠️ [AI SERVICE] GROQ_API_KEY missing. Running mock resume parser.");
     return runMockResumeParser(text);
   }
 
   try {
     const prompt = `
       You are a professional ATS resume parser. Extract the user's details from the resume text provided.
-      Return the output strictly in the requested JSON schema.
+      Return the output strictly in JSON format matching the schema below.
       
+      Schema:
+      {
+        "skills": ["string"],
+        "education": [
+          {
+            "degree": "string",
+            "institution": "string",
+            "year": number
+          }
+        ],
+        "projects": [
+          {
+            "title": "string",
+            "description": "string",
+            "tech": ["string"]
+          }
+        ],
+        "experience": [
+          {
+            "role": "string",
+            "org": "string",
+            "durationMonths": number,
+            "summary": "string"
+          }
+        ]
+      }
+
       Resume Text:
       ${text}
     `;
 
-    // Define the schema for structured output
-    const responseSchema = {
-      type: "OBJECT",
-      properties: {
-        skills: {
-          type: "ARRAY",
-          items: { type: "STRING" },
-          description: "List of technical skills, frameworks, tools and programming languages."
-        },
-        education: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              degree: { type: "STRING", description: "Degree name e.g. B.Tech Computer Science, MS" },
-              institution: { type: "STRING", description: "School, College, or University name" },
-              year: { type: "INTEGER", description: "Graduation year e.g. 2024" }
-            },
-            required: ["degree", "institution", "year"]
-          }
-        },
-        projects: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              title: { type: "STRING", description: "Project title" },
-              description: { type: "STRING", description: "1-2 sentence description of what the project did" },
-              tech: { type: "ARRAY", items: { type: "STRING" }, description: "Tech stack used in this project" }
-            },
-            required: ["title", "description"]
-          }
-        },
-        experience: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              role: { type: "STRING", description: "Job title or position" },
-              org: { type: "STRING", description: "Company or organization name" },
-              durationMonths: { type: "INTEGER", description: "Number of months worked" },
-              summary: { type: "STRING", description: "1-2 sentence description of accomplishments" }
-            },
-            required: ["role", "org", "durationMonths", "summary"]
-          }
-        }
-      },
-      required: ["skills", "education", "projects", "experience"]
-    };
-
-    const response = await ai.models.generateContent({
+    const chatCompletion = await groq.chat.completions.create({
       model: MODELS.text,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: responseSchema as any,
-      }
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional ATS resume parser. Extract details into the requested JSON schema. Do not output anything else than valid JSON.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: { type: "json_object" },
     });
 
-    const parsedJson = JSON.parse(response.text || "{}");
+    const content = chatCompletion.choices[0]?.message?.content || "{}";
+    const parsedJson = JSON.parse(content);
     return parsedJson as ParsedProfile;
   } catch (error) {
-    console.error("❌ [AI SERVICE] Gemini resume parsing error:", error);
+    console.error("❌ [AI SERVICE] Groq resume parsing error:", error);
     return runMockResumeParser(text);
   }
 };
@@ -293,22 +254,31 @@ const runMockResumeParser = (text: string): ParsedProfile => {
 };
 
 /**
- * General helper to run Gemini calls with prompt string (used by other AI tools)
+ * General helper to run Groq calls with prompt string (used by other AI tools)
  */
 export const generateText = async (prompt: string, mockResponse: string): Promise<string> => {
-  if (!isGeminiConfigured || !ai) {
-    console.log("⚠️ [AI SERVICE] Gemini API key missing. Returning mock text response.");
+  if (!isGroqConfigured || !groq) {
+    console.log("⚠️ [AI SERVICE] GROQ_API_KEY missing. Returning mock text response.");
     return mockResponse;
   }
 
   try {
-    const response = await ai.models.generateContent({
+    const chatCompletion = await groq.chat.completions.create({
       model: MODELS.text,
-      contents: prompt,
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional assistant writing cover letters or parsing documents.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
     });
-    return response.text || mockResponse;
+    return chatCompletion.choices[0]?.message?.content || mockResponse;
   } catch (error) {
-    console.error("❌ [AI SERVICE] Gemini text generation error:", error);
+    console.error("❌ [AI SERVICE] Groq text generation error:", error);
     return mockResponse;
   }
 };
@@ -334,48 +304,48 @@ export const getAtsScore = async (
 ): Promise<AtsResult> => {
   const resumeText = profile.resumeText || "";
 
-  if (isGeminiConfigured && ai && resumeText.trim()) {
+  if (isGroqConfigured && groq && resumeText.trim()) {
     try {
       const prompt = `
         You are a professional ATS scanner. Analyze the following resume text and score it from 0 to 100.
         Also provide 3-5 specific, highly actionable improvements as JSON.
+        
         Resume:
         ${resumeText}
+
+        Schema expectation:
+        {
+          "score": number,
+          "suggestions": [
+            {
+              "icon": "Award" | "Briefcase" | "FileText" | "User" | "Check",
+              "title": "string",
+              "why": "string",
+              "impact": "high" | "medium" | "low"
+            }
+          ]
+        }
       `;
 
-      const responseSchema = {
-        type: "OBJECT",
-        properties: {
-          score: { type: "INTEGER", description: "ATS score from 0 to 100" },
-          suggestions: {
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                icon: { type: "STRING", description: "Name of an icon: Award, Briefcase, FileText, User, or Check" },
-                title: { type: "STRING", description: "Short actionable improvement title" },
-                why: { type: "STRING", description: "Why this helps the resume score" },
-                impact: { type: "STRING", description: "high, medium, or low" }
-              },
-              required: ["icon", "title", "why", "impact"]
-            }
-          }
-        },
-        required: ["score", "suggestions"]
-      };
-
-      const response = await ai.models.generateContent({
+      const chatCompletion = await groq.chat.completions.create({
         model: MODELS.text,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: responseSchema as any
-        }
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional ATS scanner. Return details matching the requested JSON schema. Do not output anything else than valid JSON.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        response_format: { type: "json_object" },
       });
 
-      return JSON.parse(response.text || "{}") as AtsResult;
+      const content = chatCompletion.choices[0]?.message?.content || "{}";
+      return JSON.parse(content) as AtsResult;
     } catch (error) {
-      console.error("❌ [AI SERVICE] ATS Resume scoring error:", error);
+      console.error("❌ [AI SERVICE] Groq ATS Resume scoring error:", error);
     }
   }
 
