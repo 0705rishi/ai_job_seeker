@@ -5,18 +5,33 @@ import useAuthStore from "../store/auth.store";
 import useRecommendations, { Recommendation } from "../features/useRecommendations";
 import MatchRing from "../components/match-ring/MatchRing";
 import JobDetailsDrawer from "../components/jobs/JobDetailsDrawer";
+import useApplications from "../features/useApplications";
 
 export const DashboardPage = () => {
   const { user } = useAuthStore();
   const [activeRecDetails, setActiveRecDetails] = useState<Recommendation | null>(null);
 
   const { useGetRecommendations } = useRecommendations();
-  const { data, isLoading, error } = useGetRecommendations();
+  const { data: recData, isLoading: isRecLoading, error: recError } = useGetRecommendations();
 
-  const onboardingRequired = data?.data?.onboardingRequired ?? false;
-  const recommendations = data?.data?.recommendations || [];
+  const { useGetMyApplications } = useApplications();
+  const { data: appsData, isLoading: isAppsLoading, error: appsError } = useGetMyApplications();
+
+  const onboardingRequired = recData?.data?.onboardingRequired ?? false;
+  const recommendations = recData?.data?.recommendations || [];
   const topMatch = recommendations[0] || null;
   const otherMatches = recommendations.slice(1);
+
+  const myApplications = appsData?.data || [];
+  const totalApplied = myApplications.length;
+  const underReview = myApplications.filter(a => a.status === "review").length;
+  const shortlisted = myApplications.filter(a => a.status === "shortlisted").length;
+  const responseRate = totalApplied > 0 
+    ? Math.round(((underReview + shortlisted) / totalApplied) * 100) 
+    : 0;
+
+  const isLoading = isRecLoading || isAppsLoading;
+  const error = recError || appsError;
 
   // loading skeletons
   if (isLoading) {
@@ -115,7 +130,7 @@ export const DashboardPage = () => {
               <span className="text-xs font-bold text-text-muted uppercase tracking-wider block">
                 Applications sent
               </span>
-              <div className="mt-3 text-4xl font-mono font-bold text-emerald">4</div>
+              <div className="mt-3 text-4xl font-mono font-bold text-emerald">{totalApplied}</div>
             </div>
             <span className="p-2.5 rounded-lg bg-emerald-tint/50 text-emerald shrink-0">
               <Briefcase size={18} />
@@ -130,7 +145,7 @@ export const DashboardPage = () => {
               <span className="text-xs font-bold text-text-muted uppercase tracking-wider block">
                 Response rate
               </span>
-              <div className="mt-3 text-4xl font-mono font-bold text-amber">75%</div>
+              <div className="mt-3 text-4xl font-mono font-bold text-amber">{responseRate}%</div>
             </div>
             <span className="p-2.5 rounded-lg bg-amber-tint/50 text-amber shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>

@@ -22,6 +22,13 @@ applicationRouter.get(
 );
 
 // Recruiter routes
+applicationRouter.get(
+  "/recruiter/stats",
+  protect as any,
+  authorize("recruiter") as any,
+  applicationController.getRecruiterStats as any
+);
+
 applicationRouter.patch(
   "/:id/status",
   protect as any,

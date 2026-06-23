@@ -255,3 +255,37 @@ export const getJobApplicants = async (
     next(error);
   }
 };
+
+// Recruiter gets total application submissions count
+export const getRecruiterStats = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const recruiterId = req.user?._id;
+    if (!recruiterId) {
+      res.status(401).json({
+        success: false,
+        error: { message: "Not authenticated" },
+      });
+      return;
+    }
+
+    // Find all job IDs posted by this recruiter
+    const jobs = await Job.find({ recruiterId });
+    const jobIds = jobs.map((job) => job._id);
+
+    // Count all applications matching those job IDs
+    const totalApplicants = await Application.countDocuments({ jobId: { $in: jobIds } });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalApplicants,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

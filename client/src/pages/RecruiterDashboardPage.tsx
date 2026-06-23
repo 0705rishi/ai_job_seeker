@@ -23,13 +23,15 @@ export const RecruiterDashboardPage = () => {
     (job) => job.recruiterId === user?._id
   );
 
-  // 2. Fetch applicants for selected job
-  const { useGetJobApplicants, useUpdateApplicationStatus } = useApplications();
+  // 2. Fetch applicants and stats
+  const { useGetJobApplicants, useUpdateApplicationStatus, useGetRecruiterStats } = useApplications();
   const { 
     data: applicantsData, 
     isLoading: isLoadingApplicants,
     refetch: refetchApplicants 
   } = useGetJobApplicants(selectedJob?._id || "");
+
+  const { data: statsData, isLoading: isLoadingStats } = useGetRecruiterStats();
 
   const applicants = applicantsData?.data || [];
 
@@ -104,7 +106,7 @@ export const RecruiterDashboardPage = () => {
             <Users size={20} className="text-emerald" />
           </div>
           <div className="mt-2 text-4xl font-mono font-bold text-ink">
-            {recruiterJobs.length > 0 ? "3 Candidates" : "0"}
+            {isLoadingStats ? "..." : (statsData?.data?.totalApplicants ?? 0)}
           </div>
         </div>
       </div>

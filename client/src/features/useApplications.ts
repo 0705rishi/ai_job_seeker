@@ -118,11 +118,23 @@ export const useApplications = () => {
     });
   };
 
+  // Recruiter gets stats (applicant count)
+  const useGetRecruiterStats = () => {
+    return useQuery<{ success: boolean; data: { totalApplicants: number } }>({
+      queryKey: ["recruiterStats"],
+      queryFn: async () => {
+        const response = await api.get("/applications/recruiter/stats");
+        return response.data;
+      },
+    });
+  };
+
   return {
     useGetMyApplications,
     useApplyToJob,
     useGetJobApplicants,
     useUpdateApplicationStatus,
+    useGetRecruiterStats,
   };
 };
 
