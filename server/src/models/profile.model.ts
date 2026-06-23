@@ -50,7 +50,7 @@ const seekerProfileSchema = new Schema<ISeekerProfile>(
       {
         degree: { type: String, required: true },
         institution: { type: String, required: true },
-        year: { type: Number, required: true },
+        year: { type: Number },
       },
     ],
     skills: [{ type: String, trim: true }],
@@ -65,7 +65,7 @@ const seekerProfileSchema = new Schema<ISeekerProfile>(
       {
         role: { type: String, required: true },
         org: { type: String, required: true },
-        durationMonths: { type: Number, required: true },
+        durationMonths: { type: Number },
         summary: { type: String, required: true },
       },
     ],

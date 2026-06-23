@@ -12,7 +12,7 @@ export const profileUpdateSchema = z.object({
     z.object({
       degree: z.string().min(1, "Degree is required"),
       institution: z.string().min(1, "Institution is required"),
-      year: z.number().min(1950).max(new Date().getFullYear() + 5),
+      year: z.number().min(1950).max(new Date().getFullYear() + 5).nullable().optional(),
     })
   ).default([]),
   skills: z.array(z.string()).default([]),
@@ -27,7 +27,7 @@ export const profileUpdateSchema = z.object({
     z.object({
       role: z.string().min(1, "Role is required"),
       org: z.string().min(1, "Organization is required"),
-      durationMonths: z.number().min(0),
+      durationMonths: z.number().min(0).nullable().optional(),
       summary: z.string().min(1, "Summary is required"),
     })
   ).default([]),
