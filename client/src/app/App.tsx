@@ -235,7 +235,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       ];
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col relative overflow-hidden">
+    <div className="h-screen bg-canvas flex flex-col relative overflow-hidden">
       {/* Decorative Blob */}
       <div className="absolute top-[20%] left-[20%] w-[350px] h-[350px] rounded-full bg-indigo/5 dark:bg-indigo/8 blur-[100px] pointer-events-none z-0 glowing-blob animate-pulse" />
       <div className="absolute bottom-[20%] right-[10%] w-[300px] h-[300px] rounded-full bg-coral/5 dark:bg-coral/8 blur-[100px] pointer-events-none z-0 glowing-blob animate-pulse" style={{ animationDelay: "3s" }} />
@@ -313,7 +313,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 md:p-8 max-w-6xl w-full mx-auto relative z-10">
+      <main className="flex-1 overflow-y-auto p-6 md:p-8 max-w-6xl w-full mx-auto relative z-10">
         {children}
       </main>
     </div>
